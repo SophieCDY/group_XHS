@@ -1,0 +1,365 @@
+---
+title: "group_XHS_analysis"
+author: "Sophie CDY"
+date: "2025-04-15"
+output: html_document
+---
+
+```{r setup}
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(psych)
+
+options(scipen = 999)
+ 
+usgae_levels <- c(
+  "less than 0.5 hour", 
+  "0.5-1 hour", 
+  "1-2 hours", 
+  "more than 2 hours")
+
+likert_levels <- c(
+  "Strongly Disagree", 
+  "Disagree", 
+  "Neither agree nor disagree", 
+  "Agree", 
+  "Strongly Agree")
+
+group_xhs <- read_csv(
+  '../data/XHS_data.csv',
+  col_types = cols(
+    col_factor(ordered = TRUE, levels = usgae_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels),
+    col_factor(ordered = TRUE, levels = likert_levels)
+  ))
+
+group_xhs <- group_xhs %>%
+  mutate(
+    across(
+      .cols = c(starts_with('IS'), starts_with('CA'), starts_with('CB')),
+      .fns = as.numeric,
+      .names = '{.col}_coded'
+    )
+  )
+
+keys_list <- list(
+  IS = c(
+    'IS1_coded',
+    'IS2_coded',
+    'IS3_coded',
+    'IS4_coded',
+    'IS5_coded'
+  ),
+  CA = c(
+    'CA1_coded',
+    'CA2_coded',
+    'CA3_coded',
+    'CA4_coded'
+  ),
+  CB = c(
+    'CB1_coded',
+    'CB2_coded',
+    'CB3_coded',
+    'CB4_coded',
+    'CB4_coded'
+  )
+)
+
+xhs_scores <- scoreItems(
+  keys = keys_list,
+  items = group_xhs,
+  totals = FALSE
+)
+
+group_xhs <- cbind(group_xhs, xhs_scores $scores)
+
+```
+
+group_xhs <- group_xhs %>%
+  mutate(
+    usage_duration = usage_duration %>%
+      ordered(
+        levels = usgae_levels
+      )
+  )
+
+#Descriptive statistics
+```{r visualise-time}
+group_xhs %>%
+  ggplot(
+    aes(x = usage_duration)
+  ) + 
+   geom_bar()
+```
+
+
+
+# Hypotheses
+H1: Information search satisfaction will be positively related to the usage duration of Xiaohongshu.
+```{r IS-visualisation}
+#IS总分vs使用时长
+group_xhs %>%
+  ggplot(aes(x = IS, y = usage_duration)) + 
+  geom_jitter(width = 0.2, height = 0.1, alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE)
+
+#IS小分vs使用时长
+subvars <- c("IS1_coded", "IS2_coded", "IS3_coded", "IS4_coded", "IS5_coded")
+for (subvar in subvars) {
+  p <- group_xhs %>%
+    ggplot(aes(x = subvar, y = usage_duration)) + 
+    geom_boxplot()
+  
+  print(p)
+}
+
+```
+
+```{r IS-correlation}
+#IS总体vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + IS,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+  
+#IS1vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + IS1_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+  
+#IS2vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + IS2_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+  
+#IS3vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + IS3_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+  
+#IS4vs时长 
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + IS4_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+
+#IS5vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + IS5_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+```
+IS极弱正相关，且没有统计学意义上的显著相关性
+IS1存在小到中等程度的正相关，且达到统计显著水平
+IS2极弱正相关，且没有统计学意义上的显著相关性
+IS3极弱正相关，且没有统计学意义上的显著相关性
+IS4极弱正相关，且没有统计学意义上的显著相关性
+IS5极弱正相关，且没有统计学意义上的显著相关性
+
+H2: Comment section atmosphere satisfaction will be positively related to the usage duration of Xiaohongshu.
+```{r IS-correlation}
+#CA总体vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + CA,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+  
+#CA1vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + CA1_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+  
+#CA2vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + CA2_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+  
+#CA3vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + CA3_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+  
+#CA4vs时长 
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + CA4_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+
+```
+CA极弱正相关，且没有统计学意义上的显著相关性
+CA1极弱正相关，且没有统计学意义上的显著相关性
+CA2极弱正相关，且没有统计学意义上的显著相关性
+CA3极弱正相关，且没有统计学意义上的显著相关性
+CA4极弱负相关，且没有统计学意义上的显著相关性
+
+H3: Community belonging will be positively related to the usage duration of Xiaohongshu.
+```{r IS-correlation}
+#CB总体vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + CB,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+  
+#CB1vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + CB1_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+  
+#CB2vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + CB2_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+  
+#CB3vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + CB3_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+  
+#CB4vs时长 
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + CB4_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+
+#CB5vs时长
+  group_xhs %>%
+    mutate(
+      usage_duration = as.numeric(usage_duration)
+    )  %>%
+    cor.test(
+      ~ usage_duration + CB5_coded,
+      data = .,
+      method = 'spearman',
+      exact = FALSE
+    )
+```
+CB弱正相关,边缘显著
+CB1弱正相关，边缘显著
+CB2极弱正相关，且没有统计学意义上的显著相关性
+CB3弱正相关，且没有统计学意义上的显著相关性
+CB4极弱正相关，且没有统计学意义上的显著相关性
+CB5极弱正相关，且没有统计学意义上的显著相关性
+
+#Findings
+##Information search satisfaction versus usage
+
+
+
