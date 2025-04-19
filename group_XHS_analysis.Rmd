@@ -12,7 +12,7 @@ library(ggplot2)
 library(psych)
 
 options(scipen = 999)
- 
+
 usgae_levels <- c(
   "less than 0.5 hour", 
   "0.5-1 hour", 
@@ -74,11 +74,11 @@ keys_list <- list(
     'CB2_coded',
     'CB3_coded',
     'CB4_coded',
-    'CB4_coded'
+    'CB5_coded'
   )
 )
 
-xhs_scores <- scoreItems(
+scoreItems(
   keys = keys_list,
   items = group_xhs,
   totals = FALSE
@@ -88,14 +88,6 @@ group_xhs <- cbind(group_xhs, xhs_scores $scores)
 
 ```
 
-group_xhs <- group_xhs %>%
-  mutate(
-    usage_duration = usage_duration %>%
-      ordered(
-        levels = usgae_levels
-      )
-  )
-
 #Descriptive statistics
 ```{r visualise-time}
 group_xhs %>%
@@ -104,7 +96,6 @@ group_xhs %>%
   ) + 
    geom_bar()
 ```
-
 
 
 # Hypotheses
@@ -122,6 +113,16 @@ for (subvar in subvars) {
   p <- group_xhs %>%
     ggplot(aes(x = subvar, y = usage_duration)) + 
     geom_boxplot()
+  
+  print(p)
+}
+
+subvars <- c("IS1_coded", "IS2_coded", "IS3_coded", "IS4_coded", "IS5_coded")
+for (subvar in subvars) {
+  p <- group_xhs %>%
+    ggplot(aes(x = subvar, y = usage_duration)) + 
+    geom_jitter(width = 0.2, height = 0.1, alpha = 0.5) +
+    geom_smooth(method = "lm", se = FALSE)
   
   print(p)
 }
@@ -358,8 +359,35 @@ CB3弱正相关，且没有统计学意义上的显著相关性
 CB4极弱正相关，且没有统计学意义上的显著相关性
 CB5极弱正相关，且没有统计学意义上的显著相关性
 
-#Findings
-##Information search satisfaction versus usage
+#草稿
+##散点图
+ggplot(group_xhs, aes(x = CB, y = as.numeric(usage_duration))) +
+  geom_jitter(width = 0.2, height = 0.2, alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = "CB1", y = "Usage Duration (as numeric)")
 
+##合并组别检验
+###dummy variable
+group_xhs$usage_group <- ifelse(group_xhs$usage_duration %in% c("less than 0.5 hour", "0.5-1 hour"),"low", "high")
+group_xhs$IS5_group <- ifelse(group_xhs$IS5 %in% c("Strongly Disagree", "Disagree", "Neither agree nor disagree"),"low", "high")
+table(group_xhs$usage_group)
+table(group_xhs$IS5_group)
+fisher.test(x = group_xhs$IS5_group, y = group_xhs$usage_group)
 
+###PLS偏最小二乘回归
+library(pls)
+X <- group_xhs[, c("IS1_coded", "IS2_coded", "IS3_coded", "IS4_coded", "IS5_coded",
+                   "CA1_coded", "CA2_coded", "CA3_coded", "CA4_coded",
+                   "CB1_coded", "CB2_coded", "CB3_coded", "CB4_coded", "CB5_coded")]
+                   
+group_xhs$usage_num <- as.numeric(factor(group_xhs$usage_duration, 
+                      levels = c("less than 0.5 hour", 
+                      "0.5-1 hour", 
+                      "1-2 hours",
+                      "more than 2 hours")))
+y <- group_xhs$usage_num
+
+pls_model <- plsr(y ~ as.matrix(X), scale = TRUE, validation = "CV")
+summary(pls_model)
+loadings(pls_model) 
 
