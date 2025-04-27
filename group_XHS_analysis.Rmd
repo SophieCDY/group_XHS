@@ -78,13 +78,15 @@ keys_list <- list(
   )
 )
 
-scoreItems(
+xhs_scores <-scoreItems(
   keys = keys_list,
   items = group_xhs,
-  totals = FALSE
+  totals = FALSE,
+  missing = TRUE,
+  impute = 'none'
 )
 
-group_xhs <- cbind(group_xhs, xhs_scores $scores)
+group_xhs <- cbind(group_xhs, xhs_scores$scores)
 
 ```
 
@@ -92,11 +94,14 @@ group_xhs <- cbind(group_xhs, xhs_scores $scores)
 ```{r visualise-time}
 group_xhs %>%
   ggplot(
-    aes(x = usage_duration)
-  ) + 
-   geom_bar()
+    aes(x = usage_duration, fill = usage_duration)
+  ) +
+  geom_bar() +
+  scale_fill_brewer(palette = "Spectral") 
 ```
-
+##三个变量的平均数和方差
+sapply(group_xhs[, c("IS", "CA", "CB")], mean, na.rm = TRUE)
+sapply(group_xhs[, c("IS", "CA", "CB")], sd, na.rm = TRUE)
 
 # Hypotheses
 H1: Information search satisfaction will be positively related to the usage duration of Xiaohongshu.
@@ -104,8 +109,12 @@ H1: Information search satisfaction will be positively related to the usage dura
 #IS总分vs使用时长
 group_xhs %>%
   ggplot(aes(x = IS, y = usage_duration)) + 
-  geom_jitter(width = 0.2, height = 0.1, alpha = 0.5) +
-  geom_smooth(method = "lm", se = FALSE)
+  geom_jitter(width = 0.2, height = 0.2, alpha = 0.6) 
+
+ggplot(data = group_xhs, aes(x = IS, y = usage_duration)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(x = "IS", y = "Usage Duration") +
+  theme_minimal()
 
 #IS小分vs使用时长
 subvars <- c("IS1_coded", "IS2_coded", "IS3_coded", "IS4_coded", "IS5_coded")
@@ -121,12 +130,20 @@ subvars <- c("IS1_coded", "IS2_coded", "IS3_coded", "IS4_coded", "IS5_coded")
 for (subvar in subvars) {
   p <- group_xhs %>%
     ggplot(aes(x = subvar, y = usage_duration)) + 
-    geom_jitter(width = 0.2, height = 0.1, alpha = 0.5) +
+    geom_jitter(width = 0.2, height = 0.1, alpha = 0.3) +
     geom_smooth(method = "lm", se = FALSE)
   
   print(p)
 }
 
+```
+```{r visualise-IS}
+group_xhs %>%
+  ggplot(
+    aes(x = IS, fill = IS)
+  ) +
+  geom_bar() +
+  scale_fill_brewer(palette = "Spectral") 
 ```
 
 ```{r IS-correlation}
@@ -369,10 +386,10 @@ ggplot(group_xhs, aes(x = CB, y = as.numeric(usage_duration))) +
 ##合并组别检验
 ###dummy variable
 group_xhs$usage_group <- ifelse(group_xhs$usage_duration %in% c("less than 0.5 hour", "0.5-1 hour"),"low", "high")
-group_xhs$IS5_group <- ifelse(group_xhs$IS5 %in% c("Strongly Disagree", "Disagree", "Neither agree nor disagree"),"low", "high")
+group_xhs$IS1_group <- ifelse(group_xhs$IS1 %in% c("Strongly Disagree", "Disagree", "Neither agree nor disagree"),"low", "high")
 table(group_xhs$usage_group)
-table(group_xhs$IS5_group)
-fisher.test(x = group_xhs$IS5_group, y = group_xhs$usage_group)
+table(group_xhs$IS1_group)
+fisher.test(x = group_xhs$IS1_group, y = group_xhs$usage_group)
 
 ###PLS偏最小二乘回归
 library(pls)
@@ -390,4 +407,5 @@ y <- group_xhs$usage_num
 pls_model <- plsr(y ~ as.matrix(X), scale = TRUE, validation = "CV")
 summary(pls_model)
 loadings(pls_model) 
+
 
